@@ -18,29 +18,29 @@ LINESEP_PATTERN = re.compile(r'\r\n|\n|\r')
 LINESEP_BULK_PATTERN = re.compile(r'(?:\r\n|\n|\r)\s*')  # \s includes <space>\t\r\n\f\v
 
 # 2019-01-01 00:00:01
-DATETIME_PATTERN = r'\d{4}-\d{2}-\d{2}[ ]\d{2}:\d{2}:\d{2}'  # <space> would be ignore with re.VERBOSE, use [ ] instead
+DATETIME_PATTERN = r'\d{4}-\d{2}-\d{2}[ ]\d{2}:\d{2}:\d{2}'  # <space> would be ignore with re.X, use [ ] instead
 
 # 2019-01-01 00:00:01 [scrapy.extensions.logstats] INFO:
 # Crawled 2318 pages (at 2 pages/min), scraped 68438 items (at 60 items/min)
-DATAS_PATTERN = re.compile(r"""\n
-                            (?P<time_>%s)[ ].+?
+DATAS_PATTERN = re.compile(r"""\s\|\s
+                            (?P<time_>%s)\s\|\s.+?
                             Crawled[ ](?P<pages>\d+)[ ]pages[ ]\(at[ ](?P<pages_min>\d+)[ ]pages/min\)
                             ,[ ]scraped[ ](?P<items>\d+)[ ]items[ ]\(at[ ](?P<items_min>\d+)[ ]items/min\)
-                            """ % DATETIME_PATTERN, re.VERBOSE)
+                            """ % DATETIME_PATTERN, re.X)
 
 LOG_CATEGORIES_PATTERN_DICT = dict(
-    critical_logs=r'\][ ]CRITICAL:',            # [test] CRITICAL:
-    error_logs=r'\][ ]ERROR:',                  # [test] ERROR:
-    warning_logs=r'\][ ]WARNING:',              # [test] WARNING:
+    critical_logs=r'CRITICAL',            # [test] CRITICAL:
+    error_logs=r'ERROR',                  # [test] ERROR:
+    warning_logs=r'WARNING',              # [test] WARNING:
     redirect_logs=r':[ ]Redirecting[ ]\(',      # DEBUG: Redirecting (302) to <GET
     retry_logs=r'[ ][Rr]etrying[ ]<',           # DEBUG: Retrying <GET      DEBUG: Gave up retrying <GET
     ignore_logs=r':[ ]Ignoring[ ]response[ ]<'  # INFO: Ignoring response <404
 )
 for k, v in LOG_CATEGORIES_PATTERN_DICT.items():
     p = re.compile(r"""\n
-                    ({time_}[ ][^\n]+?{pattern}.*?)                                  # first line (and its details)
-                    (?=\r?\n{time_}[ ][^\n]+?(?:DEBUG|INFO|WARNING|ERROR|CRITICAL))  # ?=: Would not consume strings
-                   """.format(time_=DATETIME_PATTERN, pattern=v), re.VERBOSE | re.DOTALL)
+                    ({pattern}\s\|\s{time_}.*?)                                  # first line (and its details)
+                    (?=\r?\n(?:DEBUG|INFO|WARNING|ERROR|CRITICAL)\s\|\s{time_})  # ?=: Would not consume strings
+                   """.format(pattern=v, time_=DATETIME_PATTERN), re.X | re.S)       # re.S: . matches new line
     LOG_CATEGORIES_PATTERN_DICT[k] = p
 _odict = OrderedDict()
 for k in ['critical_logs', 'error_logs', 'warning_logs', 'redirect_logs', 'retry_logs', 'ignore_logs']:
@@ -61,24 +61,18 @@ LATEST_MATCHES_PATTERN_DICT = dict(
     latest_offsite=r'Filtered[ ]offsite',        # Filtered offsite request to 'www.baidu.com'
     latest_duplicate=r'Filtered[ ]duplicate',    # Filtered duplicate request: <GET http://httpbin.org/headers>
     latest_crawl=r'Crawled[ ]\(\d+\)',           # Crawled (200) <GET http://httpbin.org/headers> (referer: None)
-    # latest_scrape=r'Scraped[ ]from[ ]<',         # Scraped from <200 http://httpbin.org/headers>
-    # latest_item=r'^\{.+\}',                      # {'item': 1}  TODO: multilines item
+    latest_scrape=r'Scraped[ ]from[ ]<',         # Scraped from <200 http://httpbin.org/headers>
+    latest_item=r'^\{.+\}',                      # {'item': 1}  TODO: multilines item
     latest_stat=r'Crawled[ ]\d+[ ]pages[ ]\(at'  # Crawled 3 pages (at 0 pages/min), scraped 2 items (at 0 items/min)
 )
 _odict = OrderedDict()
 for k in ['scrapy_version', 'telnet_console', 'telnet_username', 'telnet_password', 'resuming_crawl',
-          'latest_offsite', 'latest_duplicate', 'latest_crawl', 'latest_stat']:
+          'latest_offsite', 'latest_duplicate', 'latest_crawl', 'latest_scrape', 'latest_item', 'latest_stat']:
     _odict.update({k: LATEST_MATCHES_PATTERN_DICT[k]})
 LATEST_MATCHES_PATTERN_DICT = _odict
 for k, v in LATEST_MATCHES_PATTERN_DICT.items():
-    LATEST_MATCHES_PATTERN_DICT[k] = r'^%s[ ].+?%s' % (DATETIME_PATTERN, v)
-
-# 2019-01-01 00:00:01 [scrapy.core.scraper] DEBUG: Scraped from <200 http://httpbin.org/headers>
-LATEST_SCRAPE_ITEM_PATTERN = re.compile(r"""\n
-                                         ({time_}[ ][^\n]+?{pattern}[^\n]+?)\r?\n({{.*?)
-                                         (?=\r?\n{time_}[ ][^\n]+?(?:DEBUG|INFO|WARNING|ERROR|CRITICAL))  # ?=:
-                                         """.format(time_=DATETIME_PATTERN, pattern=r':[ ]Scraped[ ]from[ ]<'),
-                                         re.VERBOSE | re.DOTALL)
+    if k != 'latest_item':
+        LATEST_MATCHES_PATTERN_DICT[k] = r'^%s[ ].+?%s' % (DATETIME_PATTERN, v)
 
 # 2019-01-01 00:00:01 [scrapy.crawler] INFO: Received SIGTERM, shutting down gracefully. Send again to force
 # 2019-01-01 00:00:01 [scrapy.core.engine] INFO: Closing spider (shutdown)
@@ -99,34 +93,16 @@ STATS_DUMPED_CATEGORIES_DICT = dict(
     ignore_logs='httperror/response_ignored_count',
 )
 
-# https://github.com/stummjr/scrapy-fieldstats -> fields_coverage in stats
-# 2019-01-01 00:00:01 [scrapy_fieldstats.fieldstats] INFO: Field stats:
-# {u'Chinese \u6c49\u5b57 1': '50%', u'Chinese \u6c49\u5b57 2': '50%'}
-# 2019-01-01 00:00:01 [scrapy_fieldstats.fieldstats] INFO: Field stats:
-# {
-    # 'author': {
-        # 'name': '100.0%',
-        # 'age':  '52.0%'
-    # },
-    # 'image':  '97.0%',
-    # 'title':  '100.0%',
-    # 'price':  '92.0%',
-    # 'stars':  '47.5%'
-# }
 # 2019-01-01 00:00:01 [scrapy.core.engine] INFO: Closing spider (finished)
 # 2019-01-01 00:00:01 [scrapy.statscollectors] INFO: Dumping Scrapy stats:
 # {'downloader/exception_count': 3,
-# 'dupefilter/filtered': 1,
-# 'fields_coverage': {u'Chinese \u6c49\u5b57 1': '50%',
-                    # u'Chinese \u6c49\u5b57 2': '50%'},
-# 'finish_reason': 'finished',
 # }
 # 2019-01-01 00:00:01 [scrapy.core.engine] INFO: Spider closed (finished)
 PATTERN_LOG_ENDING = re.compile(r"""
-                                (%s)[ ][^\n]+?
-                                (Dumping[ ]Scrapy[ ]stats:.*?(\{.+\}).*?
+                                (%s)\s\|\s[^\n]+?
+                                (Dumping[ ]Scrapy[ ]stats:.*?(\{.+?\}).*
                                 |INFO:[ ]Spider[ ]closed.*)
-                                """ % DATETIME_PATTERN, re.VERBOSE | re.DOTALL)
+                                """ % DATETIME_PATTERN, re.X | re.S)
 
 
 class Common(object):
@@ -139,7 +115,6 @@ class Common(object):
     DATAS_PATTERN = DATAS_PATTERN
     LOG_CATEGORIES_PATTERN_DICT = LOG_CATEGORIES_PATTERN_DICT
     LATEST_MATCHES_PATTERN_DICT = LATEST_MATCHES_PATTERN_DICT
-    LATEST_SCRAPE_ITEM_PATTERN = LATEST_SCRAPE_ITEM_PATTERN
 
     SIGTERM_PATTERN = SIGTERM_PATTERN
     RESPONSE_STATUS_PATTERN = RESPONSE_STATUS_PATTERN
@@ -189,8 +164,7 @@ class Common(object):
         except ValueError as err:
             print(text)
             print(traceback.format_exc())
-            # str(err) to avoid TypeError: Object of type JSONDecodeError is not JSON serializable
-            return dict(json_loads_error=str(err), stats=backup)
+            return dict(json_loads_error=err, stats=backup)
 
     def update_data_with_crawler_stats(self, data, crawler_stats, update_log_count):
         # 'downloader/response_count': 4,
