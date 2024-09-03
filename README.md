@@ -10,3 +10,7 @@ pip uninstall logparser
 ```bash
 pip install --upgrade git+https://github.com/Skyline5723/logparser
 ```
+修改配置文件的本地日志路径
+```python
+SCRAPYD_LOGS_DIR = r'D:\Projects\deploy\logs'
+```
