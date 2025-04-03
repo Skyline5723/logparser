@@ -519,6 +519,9 @@ class LogParser(Common):
         data_ = OrderedDict()
         for k in SIMPLIFIED_KEYS:
             data_[k] = data[k]
+        data_['warnings'] = data['log_categories']['warning_logs']['count']
+        data_['errors'] = data['log_categories']['critical_logs']['count'] + data['log_categories']['error_logs'][
+            'count']
         return data_
 
     def simplify_datas_in_memory(self):

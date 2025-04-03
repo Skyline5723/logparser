@@ -22,25 +22,25 @@ DATETIME_PATTERN = r'\d{4}-\d{2}-\d{2}[ ]\d{2}:\d{2}:\d{2}'  # <space> would be 
 
 # 2019-01-01 00:00:01 [scrapy.extensions.logstats] INFO:
 # Crawled 2318 pages (at 2 pages/min), scraped 68438 items (at 60 items/min)
-DATAS_PATTERN = re.compile(r"""\n
-                            (?P<time_>%s)[ ].+?
+DATAS_PATTERN = re.compile(r"""\s\|\s
+                             (?P<time_>%s)\s\|\s.+?
                             Crawled[ ](?P<pages>\d+)[ ]pages[ ]\(at[ ](?P<pages_min>\d+)[ ]pages/min\)
                             ,[ ]scraped[ ](?P<items>\d+)[ ]items[ ]\(at[ ](?P<items_min>\d+)[ ]items/min\)
                             """ % DATETIME_PATTERN, re.VERBOSE)
 
 LOG_CATEGORIES_PATTERN_DICT = dict(
-    critical_logs=r'\][ ]CRITICAL:',            # [test] CRITICAL:
-    error_logs=r'\][ ]ERROR:',                  # [test] ERROR:
-    warning_logs=r'\][ ]WARNING:',              # [test] WARNING:
+    critical_logs=r'CRITICAL',            # [test] CRITICAL:
+    error_logs=r'ERROR',                  # [test] ERROR:
+    warning_logs=r'WARNING',              # [test] WARNING:
     redirect_logs=r':[ ]Redirecting[ ]\(',      # DEBUG: Redirecting (302) to <GET
     retry_logs=r'[ ][Rr]etrying[ ]<',           # DEBUG: Retrying <GET      DEBUG: Gave up retrying <GET
     ignore_logs=r':[ ]Ignoring[ ]response[ ]<'  # INFO: Ignoring response <404
 )
 for k, v in LOG_CATEGORIES_PATTERN_DICT.items():
     p = re.compile(r"""\n
-                    ({time_}[ ][^\n]+?{pattern}.*?)                                  # first line (and its details)
-                    (?=\r?\n{time_}[ ][^\n]+?(?:DEBUG|INFO|WARNING|ERROR|CRITICAL))  # ?=: Would not consume strings
-                   """.format(time_=DATETIME_PATTERN, pattern=v), re.VERBOSE | re.DOTALL)
+                    ({pattern}\s\|\s{time_}.*?)                                  # first line (and its details)
+                     (?=\r?\n(?:DEBUG|INFO|WARNING|ERROR|CRITICAL)\s\|\s{time_})  # ?=: Would not consume strings
+                    """.format(time_=DATETIME_PATTERN, pattern=v), re.VERBOSE | re.DOTALL)     # re.S: . matches new line
     LOG_CATEGORIES_PATTERN_DICT[k] = p
 _odict = OrderedDict()
 for k in ['critical_logs', 'error_logs', 'warning_logs', 'redirect_logs', 'retry_logs', 'ignore_logs']:
@@ -124,8 +124,8 @@ STATS_DUMPED_CATEGORIES_DICT = dict(
 # }
 # 2019-01-01 00:00:01 [scrapy.core.engine] INFO: Spider closed (finished)
 PATTERN_LOG_ENDING = re.compile(r"""
-                                (%s)[ ][^\n]+?
-                                (Dumping[ ]Scrapy[ ]stats:.*?(\{.+\}).*?
+                                (%s)\s\|\s[^\n]+?
+                                 (Dumping[ ]Scrapy[ ]stats:.*?(\{.+?\}).*
                                 |INFO:[ ]Spider[ ]closed.*)
                                 """ % DATETIME_PATTERN, re.VERBOSE | re.DOTALL)
 
@@ -140,7 +140,6 @@ class Common(object):
     DATAS_PATTERN = DATAS_PATTERN
     LOG_CATEGORIES_PATTERN_DICT = LOG_CATEGORIES_PATTERN_DICT
     LATEST_MATCHES_PATTERN_DICT = LATEST_MATCHES_PATTERN_DICT
-    LATEST_SCRAPE_ITEM_PATTERN = LATEST_SCRAPE_ITEM_PATTERN
 
     SIGTERM_PATTERN = SIGTERM_PATTERN
     RESPONSE_STATUS_PATTERN = RESPONSE_STATUS_PATTERN
