@@ -67,14 +67,18 @@ class ScrapyLogParser(Common):
         return int(time.mktime(datetime_obj.timetuple()))
 
     def extract_time(self):
-        self.data['first_log_time'] = re.search(
-            r'\|\s%s\s\|' % self.DATETIME_PATTERN,
-            self.re_search_final_match(r'\|\s%s\s\|' % self.DATETIME_PATTERN, step=1)
-        ).group()[2:-2]
-        self.data['latest_log_time'] = re.search(
-            r'\|\s%s\s\|' % self.DATETIME_PATTERN,
-            self.re_search_final_match(r'\|\s%s\s\|' % self.DATETIME_PATTERN)
-        ).group()[2:-2]
+        try:
+            self.data['first_log_time'] = re.search(
+                r'\|\s%s\s\|' % self.DATETIME_PATTERN,
+                self.re_search_final_match(r'\|\s%s\s\|' % self.DATETIME_PATTERN, step=1)
+            ).group()[2:-2]
+            self.data['latest_log_time'] = re.search(
+                r'\|\s%s\s\|' % self.DATETIME_PATTERN,
+                self.re_search_final_match(r'\|\s%s\s\|' % self.DATETIME_PATTERN)
+            ).group()[2:-2]
+        except AttributeError:
+            self.data['first_log_time'] = '1970-01-01 00:00:00'
+            self.data['latest_log_time'] = '1970-01-01 00:00:01'
 
         if self.data['first_log_time'] and self.data['latest_log_time']:
             first_log_datetime = self.string_to_datetime_obj(self.data['first_log_time'])
