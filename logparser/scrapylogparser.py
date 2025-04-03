@@ -67,8 +67,11 @@ class ScrapyLogParser(Common):
         return int(time.mktime(datetime_obj.timetuple()))
 
     def extract_time(self):
-        self.data['first_log_time'] = self.re_search_final_match(r'\|\s%s\s\|' % self.DATETIME_PATTERN, step=1).split(' | ')[1]
-        self.data['latest_log_time'] = self.re_search_final_match(r'\|\s%s\s\|' % self.DATETIME_PATTERN).split(' | ')[1]
+        pattern = rf'^(?:DEBUG|INFO|WARNING|ERROR|CRITICAL)[ ]\|[ ]{self.DATETIME_PATTERN}'
+        els1 = self.re_search_final_match(pattern, step=1).split(' | ')
+        els2 = self.re_search_final_match(pattern).split(' | ')
+        self.data['first_log_time'] = els1[1] if els1 else ''
+        self.data['latest_log_time'] = els2[1] if els1 else ''
 
         if self.data['first_log_time'] and self.data['latest_log_time']:
             first_log_datetime = self.string_to_datetime_obj(self.data['first_log_time'])
