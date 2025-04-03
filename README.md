@@ -10,3 +10,7 @@
 再安装：
 
 `pip install git+https://github.com/Skyline5723/logparser.git`
+
+启动：
+
+`logparser -dir D:\Projects\APSZ-DouYin-Scrap-V4\deploy\logs`
