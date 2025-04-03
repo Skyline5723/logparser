@@ -61,8 +61,8 @@ LATEST_MATCHES_PATTERN_DICT = dict(
     latest_offsite=r'Filtered[ ]offsite',        # Filtered offsite request to 'www.baidu.com'
     latest_duplicate=r'Filtered[ ]duplicate',    # Filtered duplicate request: <GET http://httpbin.org/headers>
     latest_crawl=r'Crawled[ ]\(\d+\)',           # Crawled (200) <GET http://httpbin.org/headers> (referer: None)
-    # latest_scrape=r'Scraped[ ]from[ ]<',         # Scraped from <200 http://httpbin.org/headers>
-    # latest_item=r'^\{.+\}',                      # {'item': 1}  TODO: multilines item
+    latest_scrape=r'Scraped[ ]from[ ]<',         # Scraped from <200 http://httpbin.org/headers>
+    latest_item=r'^\{.+\}',                      # {'item': 1}  TODO: multilines item
     latest_stat=r'Crawled[ ]\d+[ ]pages[ ]\(at'  # Crawled 3 pages (at 0 pages/min), scraped 2 items (at 0 items/min)
 )
 _odict = OrderedDict()
@@ -71,7 +71,7 @@ for k in ['scrapy_version', 'telnet_console', 'telnet_username', 'telnet_passwor
     _odict.update({k: LATEST_MATCHES_PATTERN_DICT[k]})
 LATEST_MATCHES_PATTERN_DICT = _odict
 for k, v in LATEST_MATCHES_PATTERN_DICT.items():
-    if k not in ['telnet_username', 'telnet_password']:
+    if k not in ['telnet_username', 'telnet_password', 'latest_item']:
         LATEST_MATCHES_PATTERN_DICT[k] = r'^%s[ ].+?%s' % (DATETIME_PATTERN, v)
 
 # 2019-01-01 00:00:01 [scrapy.core.scraper] DEBUG: Scraped from <200 http://httpbin.org/headers>

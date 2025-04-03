@@ -5,8 +5,8 @@
 
 若已安装先卸载：
 
-`pip uninstall scrapydweb`
+`pip uninstall logparser -y`
 
 再安装：
 
-`pip install https://github.com/Skyline5723/scrapydweb.git`
+`pip install git+https://github.com/Skyline5723/logparser.git`
