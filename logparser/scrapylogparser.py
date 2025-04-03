@@ -70,8 +70,8 @@ class ScrapyLogParser(Common):
         pattern = rf'^(?:DEBUG|INFO|WARNING|ERROR|CRITICAL)[ ]\|[ ]{self.DATETIME_PATTERN}'
         els1 = self.re_search_final_match(pattern, step=1).split(' | ')
         els2 = self.re_search_final_match(pattern).split(' | ')
-        self.data['first_log_time'] = els1[1] if els1 else ''
-        self.data['latest_log_time'] = els2[1] if els1 else ''
+        self.data['first_log_time'] = els1[1] if len(els1) > 1 else None
+        self.data['latest_log_time'] = els2[1] if len(els2) > 1 else None
 
         if self.data['first_log_time'] and self.data['latest_log_time']:
             first_log_datetime = self.string_to_datetime_obj(self.data['first_log_time'])
